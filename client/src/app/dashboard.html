@@ -1,0 +1,2530 @@
+<div class="app-shell" dir="rtl">
+  <header class="topbar" [class.auth-topbar]="!isAuthenticated()">
+    <a class="brand" href="#top" aria-label="YOCA, מעבר לראש העמוד">
+      <span class="brand-copy"
+        ><span class="brand-word">YOCA</span
+        ><small class="brand-tagline">YOGA · CALISTHENICS</small></span
+      >
+      <img class="brand-symbol" src="yoca-symbol.svg" alt="" />
+    </a>
+    @if (isAuthenticated()) {
+      <nav class="main-nav" aria-label="ניווט ראשי" role="tablist">
+        @for (item of visibleNavItems(); track item.id) {
+          <button
+            type="button"
+            class="nav-tab"
+            [class.active]="activeTab() === item.id"
+            role="tab"
+            [attr.aria-selected]="activeTab() === item.id"
+            (click)="selectTab(item.id)"
+          >
+            @if (item.id === 'overview') {
+              <svg lucideHouse size="16"></svg>
+            }
+            @if (item.id === 'home') {
+              <svg lucideHouse size="16"></svg>
+            }
+            @if (item.id === 'workouts') {
+              <svg lucideDumbbell size="16"></svg>
+            }
+            @if (item.id === 'updates') {
+              <svg lucideBell size="16"></svg>
+            }
+            @if (item.id === 'progress') {
+              <svg lucideTrophy size="16"></svg>
+            }
+            @if (item.id === 'schedule') {
+              <svg lucideCalendarDays size="16"></svg>
+            }
+            @if (item.id === 'members') {
+              <svg lucideUserRound size="16"></svg>
+            }
+            @if (item.id === 'pricing') {
+              <svg lucideTag size="16"></svg>
+            }
+            @if (item.id === 'member-pricing') {
+              <svg lucideTag size="16"></svg>
+            }
+            @if (item.id === 'board') {
+              <svg lucideMegaphone size="16"></svg>
+            }
+            @if (item.id === 'content') {
+              <svg lucideShare2 size="16"></svg>
+            }
+            {{ item.label }}
+            @if (role() === 'admin' && item.id === 'members' && pendingMembers().length > 0) {
+              <span class="nav-count">{{ pendingMembers().length }}</span>
+            }
+          </button>
+        }
+      </nav>
+      <div class="top-actions">
+        <span class="demo-pill" title="סביבת הדגמה"><span></span> דמו</span>
+        <div class="profile-control">
+          <button
+            class="profile-button"
+            type="button"
+            [attr.aria-expanded]="profileMenuOpen()"
+            aria-haspopup="menu"
+            (click)="toggleProfileMenu()"
+          >
+            <span class="avatar-button">{{
+              role() === 'member' ? currentMember()?.initials : coachInitials()
+            }}</span>
+            <span class="profile-name">{{
+              role() === 'member' ? currentMember()?.name : coachName()
+            }}</span>
+            <span class="profile-chevron">⌄</span>
+          </button>
+          @if (profileMenuOpen()) {
+            <div class="profile-menu" role="menu">
+              <div class="profile-menu-heading">
+                <strong>{{ role() === 'member' ? currentMember()?.name : coachName() }}</strong
+                ><span>{{ role() === 'member' ? profileText('memberArea') : 'ניהול סטודיו' }}</span>
+              </div>
+              @if (role() === 'member') {
+                <button type="button" role="menuitem" (click)="selectTab('member-profile')">
+                  <svg lucideUserRound size="16"></svg> פרטים אישיים
+                </button>
+                <button type="button" role="menuitem" (click)="selectTab('member-settings')">
+                  <svg lucideSettings size="16"></svg> הגדרות אישיות
+                </button>
+                <button type="button" role="menuitem" (click)="signOut()">
+                  <svg lucideLogOut size="16"></svg> התנתקות
+                </button>
+              } @else {
+                <button type="button" role="menuitem" (click)="selectTab('member-profile')">
+                  <svg lucideUserRound size="16"></svg> פרטים אישיים
+                </button>
+                <button type="button" role="menuitem" (click)="switchRole('member')">
+                  מעבר לתצוגת מתאמן <span>↗</span>
+                </button>
+                <button type="button" role="menuitem" (click)="signOut()">
+                  <svg lucideLogOut size="16"></svg> התנתקות
+                </button>
+              }
+            </div>
+          }
+        </div>
+      </div>
+    }
+  </header>
+
+  <main id="top" class="page-wrap">
+    @if (isAuthenticated()) {
+      <div class="demo-notice">
+        <svg lucideInfo size="15"></svg>
+        <p><strong>דמו</strong><span> לא מתבצע חיוב או פרסום</span></p>
+      </div>
+
+      @if (role() === 'member' && activeTab() === 'home') {
+        <section class="member-welcome">
+          <div>
+            <p class="eyebrow">יום שישי · 16 באוקטובר</p>
+            <h1>היי {{ currentMemberFirstName() }}</h1>
+          </div>
+          <span class="welcome-mark">✳</span>
+        </section>
+        <section class="member-home-grid">
+          <article class="next-workout-card">
+            <div class="next-workout-top">
+              <span class="upcoming-tag"><span></span> האימון הבא</span
+              ><span class="next-date"
+                ><svg lucideCalendarDays size="14"></svg>
+                @if (nextWorkout()) {
+                  {{ nextWorkout()?.day }} · {{ nextWorkout()?.date }}
+                }
+              </span>
+            </div>
+            @if (nextWorkout(); as session) {
+              <div class="next-workout-main">
+                <div class="next-time">
+                  <strong>{{ session.time }}</strong
+                  ><span>היום</span>
+                </div>
+                <div>
+                  <h2>{{ session.name }}</h2>
+                  <p>
+                    <svg lucideMapPin size="13"></svg> {{ session.coach }} · {{ session.location }}
+                  </p>
+                </div>
+              </div>
+              <div class="reminder-strip">
+                <svg lucideClock3 size="14"></svg
+                ><span>{{
+                  reminderEnabled()
+                    ? 'תזכורת · ' + reminderLeadLabel() + ' לפני האימון'
+                    : 'תזכורת כבויה'
+                }}</span
+                ><button
+                  type="button"
+                  aria-label="הגדרות תזכורת"
+                  title="הגדרות תזכורת"
+                  (click)="selectTab('member-settings')"
+                >
+                  <svg lucideSettings size="15"></svg>
+                </button>
+              </div>
+              <button class="next-workout-link" type="button" (click)="selectTab('workouts')">
+                לפרטי האימון <svg lucideChevronLeft size="15"></svg>
+              </button>
+            } @else {
+              <div class="no-next-workout">
+                <strong>אין אימון קרוב</strong
+                ><button class="button button-light" type="button" (click)="selectTab('workouts')">
+                  <svg lucideDumbbell size="14"></svg> בחירת אימון
+                </button>
+              </div>
+            }
+          </article>
+          <article class="panel member-points-card">
+            <div class="points-card-heading">
+              <span><svg lucideTrophy size="16"></svg> הנקודות שלי</span
+              ><button
+                class="icon-link"
+                type="button"
+                aria-label="לכל ההתקדמות"
+                title="לכל ההתקדמות"
+                (click)="selectTab('progress')"
+              >
+                <svg lucideChevronLeft size="16"></svg>
+              </button>
+            </div>
+            <div class="member-points-total">
+              <strong>{{ currentMember()?.points }}</strong
+              ><span>נק׳</span>
+            </div>
+            <div class="member-points-foot">
+              <span>{{ currentMember()?.attendance }} אימונים החודש</span
+              ><span>{{ memberAttendancePercent() }}%</span>
+            </div>
+            <div class="member-progress-track">
+              <span [style.width.%]="memberAttendancePercent()"></span>
+            </div>
+          </article>
+        </section>
+      }
+      @if (role() === 'member' && activeTab() === 'home' && latestCoachPost(); as coachPost) {
+        <section class="latest-coach-post" [attr.aria-label]="coachPost.title">
+          <article class="panel coach-social-post">
+            <header class="panel-heading">
+              <div>
+                <p class="eyebrow">{{ coachPost.publishedLabel }} · Instagram</p>
+                <h2>{{ coachPost.title }}</h2>
+              </div>
+              <span class="package-count">Instagram</span>
+            </header>
+            <div class="instagram-embed-wrap" dir="ltr">
+              <iframe
+                class="instagram-embed"
+                dir="ltr"
+                [src]="latestCoachPostEmbedUrl()!"
+                [title]="coachPost.title + ' באינסטגרם'"
+                loading="eager"
+                allow="autoplay; encrypted-media; picture-in-picture"
+                allowfullscreen
+                referrerpolicy="strict-origin-when-cross-origin"
+              ></iframe>
+            </div>
+          </article>
+        </section>
+        <section class="member-updates panel">
+          <div class="panel-heading">
+            <div class="updates-title">
+              <svg lucideBell size="16"></svg>
+              <h2>מה חדש</h2>
+            </div>
+            <button class="text-button" type="button" (click)="selectTab('updates')">
+              הכל <svg lucideChevronLeft size="15"></svg>
+            </button>
+          </div>
+          @for (announcement of announcements().slice(0, 1); track announcement.id) {
+            <article class="member-update-row">
+              <span class="announcement-dot"></span>
+              <div>
+                <strong>{{ announcement.title }}</strong>
+                <p>{{ announcement.body }}</p>
+              </div>
+              <time>{{ announcement.date }}</time>
+            </article>
+          }
+        </section>
+      }
+
+      @if (role() === 'member' && activeTab() === 'member-pricing') {
+        <section class="page-heading member-page-heading">
+          <div>
+            <p class="eyebrow">החבילה שלך</p>
+            <h1>מחירון ויתרה</h1>
+            <p class="heading-copy">היתרה מתעדכנת כשהמאמן מתעד תשלום או אימון שהושלם.</p>
+          </div>
+        </section>
+        <section class="member-finance-grid">
+          <article class="panel member-package-summary">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">מעקב אישי</p>
+                <h2>יתרת האימונים שלך</h2>
+              </div>
+              <span class="package-icon">{{ currentMember()?.purchasedSessions ?? 0 }}</span>
+            </div>
+            @if ((currentMember()?.purchasedSessions ?? 0) > 0) {
+              <div class="package-remaining">
+                <strong>{{ remainingSessions(currentMemberId()) }}</strong
+                ><span>אימונים זמינים</span>
+              </div>
+              <div class="package-track">
+                <span [style.width.%]="memberUsagePercent(currentMemberId())"></span>
+              </div>
+              <p class="package-caption">
+                {{ currentMember()?.usedSessions }} נוצלו מתוך
+                {{ currentMember()?.purchasedSessions }} אימונים
+              </p>
+            } @else {
+              <div class="member-no-package">
+                <strong>אין כרגע יתרת אימונים</strong
+                ><span>לאחר תיעוד תשלום על ידי המאמן, החבילה תופיע כאן.</span>
+              </div>
+            }
+          </article>
+          <article class="panel member-public-pricing">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">מחירים לכולם</p>
+                <h2>מחירון הסטודיו</h2>
+              </div>
+            </div>
+            <div class="public-price-row">
+              <div><strong>אימון בודד</strong><small>ללא התחייבות</small></div>
+              <strong>₪{{ singleClassPrice() }}</strong>
+            </div>
+            @for (item of trainingPackages(); track item.id) {
+              <div class="public-price-row">
+                <div>
+                  <strong>{{ item.name }}</strong
+                  ><small
+                    >{{ item.sessions }} אימונים · ₪{{
+                      item.price / item.sessions | number: '1.0-0'
+                    }}
+                    לאימון</small
+                  >
+                </div>
+                <strong>₪{{ item.price }}</strong>
+              </div>
+            }
+            <p class="public-price-note">
+              התשלום נעשה בנפרד מול המאמן. היתרה מתעדכנת לאחר תיעוד במערכת.
+            </p>
+          </article>
+        </section>
+      }
+
+      @if (role() === 'member' && activeTab() === 'workouts') {
+        <section class="page-heading member-page-heading">
+          <div>
+            <p class="eyebrow">לוח שבועי</p>
+            <h1>אימונים</h1>
+          </div>
+          <span class="member-chip" [attr.aria-label]="'הרשמות פעילות: ' + reservedWorkoutCount()"
+            ><svg lucideCheck size="14"></svg> {{ reservedWorkoutCount() }}</span
+          >
+        </section>
+        <section class="workouts-filter" role="tablist" aria-label="סינון אימונים">
+          <button
+            type="button"
+            role="tab"
+            aria-label="כל האימונים"
+            [attr.aria-selected]="workoutFilter() === 'all'"
+            [class.selected]="workoutFilter() === 'all'"
+            (click)="workoutFilter.set('all')"
+          >
+            הכל</button
+          ><button
+            type="button"
+            role="tab"
+            aria-label="האימונים שלי"
+            [attr.aria-selected]="workoutFilter() === 'mine'"
+            [class.selected]="workoutFilter() === 'mine'"
+            (click)="workoutFilter.set('mine')"
+          >
+            שלי
+          </button>
+        </section>
+        <section class="workout-cards">
+          @for (session of visibleClasses(); track session.id) {
+            <article class="workout-card" [class.booked-workout]="session.reserved">
+              <div class="workout-date-block">
+                <svg lucideCalendarDays size="15"></svg><strong>{{ session.date }}</strong
+                ><span>{{ session.day }}</span>
+              </div>
+              <div class="workout-time-block">
+                <svg lucideClock3 size="15"></svg><strong>{{ session.time }}</strong>
+              </div>
+              <div class="workout-description">
+                <h2>{{ session.name }}</h2>
+                <p>
+                  <svg lucideMapPin size="13"></svg> {{ session.coach }} · {{ session.location }}
+                </p>
+                <div class="workout-spaces">
+                  <span class="capacity-track"
+                    ><span [style.width.%]="(session.booked / session.capacity) * 100"></span></span
+                  ><small>{{ session.capacity - session.booked }} מקומות</small>
+                </div>
+              </div>
+              <div class="workout-action">
+                @if (session.reserved) {
+                  <span class="booking-badge"><svg lucideCheck size="13"></svg> מקום שמור</span
+                  ><button
+                    class="cancel-booking"
+                    type="button"
+                    (click)="cancelReservation(session.id)"
+                  >
+                    ביטול
+                  </button>
+                } @else {
+                  <button
+                    class="button button-dark"
+                    [disabled]="session.booked >= session.capacity"
+                    type="button"
+                    (click)="reserveClass(session.id)"
+                  >
+                    {{ session.booked >= session.capacity ? 'מלא' : 'הרשמה' }}
+                  </button>
+                }
+              </div>
+            </article>
+          } @empty {
+            <div class="empty-state empty-panel">
+              <svg lucideCalendarDays size="20"></svg><strong>אין אימונים להצגה</strong
+              ><button class="text-button" type="button" (click)="workoutFilter.set('all')">
+                לכל האימונים
+              </button>
+            </div>
+          }
+        </section>
+      }
+
+      @if (role() === 'admin' && activeTab() === 'overview') {
+        <section class="page-heading">
+          <div>
+            <p class="eyebrow">יום שישי, 16 באוקטובר 2026</p>
+            <h1>בוקר טוב, {{ coachFirstName() }} <span class="sun-mark">✳</span></h1>
+            <p class="heading-copy">הסטודיו בתנועה. הנה מה שקורה היום.</p>
+          </div>
+          <button class="button button-dark" type="button" (click)="selectTab('schedule')">
+            <span>＋</span> שיעור חדש
+          </button>
+        </section>
+
+        <section class="metrics" aria-label="סיכום נתונים">
+          <article class="metric metric-lead">
+            <div class="metric-top">
+              <span>מתאמנים פעילות</span><span class="metric-icon green-icon">↗</span>
+            </div>
+            <strong>48</strong><small><b>+6</b> בחודש האחרון</small>
+          </article>
+          <article class="metric">
+            <div class="metric-top">
+              <span>הזמנות השבוע</span><span class="metric-icon">▦</span>
+            </div>
+            <strong>126</strong><small>מתוך 144 מקומות</small>
+          </article>
+          <article class="metric">
+            <div class="metric-top">
+              <span>מקומות תפוסים</span
+              ><span class="metric-icon"><svg lucideDumbbell size="14"></svg></span>
+            </div>
+            <strong>{{ classPlacesBooked() }}/{{ classPlacesTotal() }}</strong
+            ><small>בשיעורים הקרובים</small>
+          </article>
+          <article class="metric metric-alert">
+            <div class="metric-top">
+              <span>בקשות הצטרפות</span><span class="metric-icon alert-icon">↗</span>
+            </div>
+            <strong>{{ pendingMembers().length }}</strong
+            ><small>ממתינות לאישור שלך</small>
+          </article>
+        </section>
+
+        <section class="dashboard-grid">
+          <article class="panel classes-panel">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">יום שישי · 16.10</p>
+                <h2>השיעורים הקרובים</h2>
+              </div>
+              <button class="text-button" type="button" (click)="selectTab('schedule')">
+                כל השיעורים <span>←</span>
+              </button>
+            </div>
+            <div class="class-list">
+              @for (session of classes().slice(0, 3); track session.id) {
+                <div class="class-row">
+                  <div class="class-time">
+                    <strong>{{ session.time }}</strong
+                    ><span>{{ session.day }}</span>
+                  </div>
+                  <div class="class-info">
+                    <strong>{{ session.name }}</strong
+                    ><span>{{ session.coach }} · {{ session.location }}</span>
+                  </div>
+                  <div class="capacity-wrap">
+                    <div class="capacity-label">
+                      <span>{{ session.booked }}/{{ session.capacity }} מקומות</span
+                      ><span
+                        >{{ (session.booked / session.capacity) * 100 | number: '1.0-0' }}%</span
+                      >
+                    </div>
+                    <div class="capacity-track">
+                      <span [style.width.%]="(session.booked / session.capacity) * 100"></span>
+                    </div>
+                  </div>
+                  <span
+                    class="class-status"
+                    [class.status-full]="session.booked >= session.capacity"
+                    >{{ session.booked >= session.capacity ? 'מלא' : 'פתוח' }}</span
+                  >
+                </div>
+              }
+            </div>
+            <div class="class-footer">
+              <span class="live-dot"></span> 3 שיעורים היום <span class="footer-divider">·</span> 9
+              מקומות פנויים
+            </div>
+          </article>
+
+          <article class="panel requests-panel">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">דורש את תשומת ליבך</p>
+                <h2>
+                  בקשות הצטרפות <span class="heading-count">{{ pendingMembers().length }}</span>
+                </h2>
+              </div>
+              <button
+                class="small-icon-button"
+                type="button"
+                aria-label="רענון נתונים"
+                (click)="loadStudioFinance(); loadJoinRequests(); loadClasses()"
+              >
+                ↻
+              </button>
+            </div>
+            @if (pendingMembers().length) {
+              @for (member of pendingMembers(); track member.id) {
+                <div class="request-person">
+                  <span class="person-avatar orange-avatar">{{ member.initials }}</span>
+                  <div class="person-info">
+                    <strong>{{ member.name }}</strong
+                    ><span>{{ member.email }}</span
+                    ><small>הבקשה התקבלה · {{ member.joined }}</small>
+                  </div>
+                  <div class="request-actions">
+                    <button class="approve-button" type="button" (click)="approveMember(member.id)">
+                      אישור</button
+                    ><button
+                      class="reject-button"
+                      type="button"
+                      aria-label="דחיית בקשה"
+                      (click)="removeMember(member.id)"
+                    >
+                      ×
+                    </button>
+                  </div>
+                </div>
+              }
+            } @else {
+              <div class="empty-state">
+                <span>✓</span><strong>הכל טופל</strong>
+                <p>אין בקשות שממתינות כרגע.</p>
+              </div>
+            }
+            <button class="panel-link" type="button" (click)="selectTab('members')">
+              ניהול כל המתאמנים <span>←</span>
+            </button>
+          </article>
+        </section>
+
+        <section class="lower-grid">
+          <article class="panel progress-panel">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">עקביות עושה את ההבדל</p>
+                <h2>מתקדמות יחד</h2>
+              </div>
+              <button class="text-button" type="button" (click)="selectTab('members')">
+                לכל המתאמנות <span>←</span>
+              </button>
+            </div>
+            <div class="member-progress-list">
+              @for (member of activeMembers().slice(0, 3); track member.id) {
+                <div class="progress-row">
+                  <span
+                    class="person-avatar"
+                    [class.avatar-coral]="member.id === 2"
+                    [class.avatar-blue]="member.id === 3"
+                    >{{ member.initials }}</span
+                  >
+                  <div class="progress-person">
+                    <strong>{{ member.name }}</strong
+                    ><span>{{ member.attendance }} אימונים החודש</span>
+                  </div>
+                  <div class="progress-bar">
+                    <span [style.width.%]="member.attendance * 4"></span>
+                  </div>
+                  <strong class="points-number">{{ member.points }} <small>נק׳</small></strong>
+                </div>
+              }
+            </div>
+          </article>
+          <article class="panel announcement-teaser">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">נשארות מחוברות</p>
+                <h2>לוח המודעות</h2>
+              </div>
+              <span class="board-icon">✳</span>
+            </div>
+            @for (announcement of announcements().slice(0, 2); track announcement.id) {
+              <div class="announcement-line">
+                <span class="announcement-dot"></span>
+                <div>
+                  <strong>{{ announcement.title }}</strong>
+                  <p>{{ announcement.body }}</p>
+                  <small>{{ announcement.date }}</small>
+                </div>
+              </div>
+            }
+            <button class="panel-link" type="button" (click)="selectTab('board')">
+              לכל ההודעות <span>←</span>
+            </button>
+          </article>
+        </section>
+      }
+
+      @if (role() === 'admin' && activeTab() === 'schedule') {
+        <section class="page-heading">
+          <div>
+            <p class="eyebrow">ניהול הסטודיו</p>
+            <h1>לוח שיעורים</h1>
+            <p class="heading-copy">תכנון שבועי, הרשמות ומקומות פנויים.</p>
+          </div>
+          <button class="button button-dark" type="button" (click)="openCreateClassForm()">
+            <span>＋</span> הוספת שיעור
+          </button>
+        </section>
+        @if (classFormOpen()) {
+          <section class="panel class-editor">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">{{ editingClassId() ? 'עדכון שיעור' : 'שיעור חדש' }}</p>
+                <h2>{{ editingClassId() ? 'עריכת פרטי השיעור' : 'פרטי השיעור' }}</h2>
+              </div>
+              <button
+                class="small-icon-button"
+                type="button"
+                aria-label="סגירת הטופס"
+                (click)="closeClassForm()"
+              >
+                ×
+              </button>
+            </div>
+            <div class="class-editor-fields">
+              <label class="field-label"
+                >שם השיעור<input
+                  class="text-field"
+                  type="text"
+                  [value]="classNameDraft()"
+                  (input)="classNameDraft.set($any($event.target).value)"
+                  placeholder="למשל: יוגה זורמת" /></label
+              ><label class="field-label"
+                >תאריך<input
+                  class="text-field"
+                  type="date"
+                  [value]="classDateDraft()"
+                  (input)="classDateDraft.set($any($event.target).value)" /></label
+              ><label class="field-label"
+                >שעה<input
+                  class="text-field"
+                  type="time"
+                  [value]="classTimeDraft()"
+                  (input)="classTimeDraft.set($any($event.target).value)" /></label
+              ><label class="field-label"
+                >מאמן/ת<input
+                  class="text-field"
+                  type="text"
+                  [value]="classCoachDraft()"
+                  (input)="classCoachDraft.set($any($event.target).value)"
+                  placeholder="שם המאמן/ת" /></label
+              ><label class="field-label"
+                >מיקום<input
+                  class="text-field"
+                  type="text"
+                  [value]="classLocationDraft()"
+                  (input)="classLocationDraft.set($any($event.target).value)"
+                  placeholder="סטודיו ראשי" /></label
+              ><label class="field-label"
+                >קיבולת<input
+                  class="text-field"
+                  type="number"
+                  min="1"
+                  [value]="classCapacityDraft()"
+                  (input)="classCapacityDraft.set($any($event.target).value)" /></label
+              ><label class="field-label"
+                >משך בדקות <span>לא חובה</span
+                ><input
+                  class="text-field"
+                  type="number"
+                  min="15"
+                  max="240"
+                  step="5"
+                  [value]="classDurationDraft() === '0' ? '' : classDurationDraft()"
+                  (input)="classDurationDraft.set($any($event.target).value || '0')"
+              /></label>
+            </div>
+            <div class="class-editor-actions">
+              <small>קיבולת לא יכולה להיות נמוכה ממספר הנרשמים.</small>
+              <div>
+                <button class="button button-outline" type="button" (click)="closeClassForm()">
+                  ביטול</button
+                ><button class="button button-dark" type="button" (click)="saveClass()">
+                  {{ editingClassId() ? 'שמירת שינויים' : 'יצירת שיעור' }}
+                </button>
+              </div>
+            </div>
+          </section>
+        }
+        <section class="panel full-panel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">16–18 באוקטובר</p>
+              <h2>השיעורים הקרובים</h2>
+            </div>
+            <span class="week-label">שבוע 42 <span>⌄</span></span>
+          </div>
+          <div class="schedule-list">
+            @for (session of classes(); track session.id) {
+              <div class="schedule-row">
+                <div class="schedule-date">
+                  <strong>{{ session.day }}</strong
+                  ><span>{{ session.date }}</span>
+                </div>
+                <div class="schedule-hour">{{ session.time }}</div>
+                <div class="schedule-class">
+                  <strong>{{ session.name }}</strong
+                  ><span>{{ session.coach }} · {{ session.location }}</span>
+                </div>
+                <div class="schedule-capacity">
+                  <span>{{ session.booked }} נרשמו מתוך {{ session.capacity }}</span>
+                  <div class="capacity-track">
+                    <span [style.width.%]="(session.booked / session.capacity) * 100"></span>
+                  </div>
+                </div>
+                <div class="schedule-actions">
+                  <button
+                    class="button button-outline"
+                    type="button"
+                    (click)="openAttendanceSheet(session.id)"
+                  >
+                    נוכחות</button
+                  ><button
+                    class="button button-outline"
+                    type="button"
+                    (click)="openEditClassForm(session.id)"
+                  >
+                    עריכה</button
+                  ><button
+                    class="schedule-cancel-button"
+                    type="button"
+                    (click)="requestCancelClass(session.id)"
+                  >
+                    ביטול
+                  </button>
+                </div>
+              </div>
+              @if (confirmClassCancellationId() === session.id) {
+                <div class="schedule-cancel-confirm" role="alert">
+                  <span
+                    >לבטל את {{ session.name }} ב־{{ session.date }}?
+                    <small>כל {{ session.booked }} ההרשמות לשיעור יוסרו.</small></span
+                  ><button
+                    class="schedule-cancel-button"
+                    type="button"
+                    (click)="cancelClass(session.id)"
+                  >
+                    אישור ביטול</button
+                  ><button
+                    class="button button-outline"
+                    type="button"
+                    (click)="cancelClassCancellation()"
+                  >
+                    השארת השיעור
+                  </button>
+                </div>
+              }
+            }
+          </div>
+        </section>
+      }
+
+      @if (role() === 'admin' && activeTab() === 'members') {
+        <section class="page-heading">
+          <div>
+            <p class="eyebrow">קהילת YOCA</p>
+            <h1>המתאמנים שלנו</h1>
+            <p class="heading-copy">בקשות גישה, נוכחות והתקדמות במקום אחד.</p>
+          </div>
+          <button
+            class="button button-dark"
+            type="button"
+            (click)="showToast('הזמנת מתאמן תתווסף בחיבור לשרת')"
+          >
+            <span>＋</span> הזמנת מתאמן
+          </button>
+        </section>
+        <section class="metrics compact-metrics">
+          <article class="metric">
+            <div class="metric-top">
+              <span>סה״כ מתאמנים</span><span class="metric-icon">◎</span>
+            </div>
+            <strong>{{ members().length }}</strong
+            ><small>כולל בקשות ממתינות</small>
+          </article>
+          <article class="metric metric-alert">
+            <div class="metric-top">
+              <span>ממתינים לאישור</span><span class="metric-icon alert-icon">⌛</span>
+            </div>
+            <strong>{{ pendingMembers().length }}</strong
+            ><small>טיפול נדרש</small>
+          </article>
+          <article class="metric">
+            <div class="metric-top">
+              <span>אימונים החודש</span><span class="metric-icon">↗</span>
+            </div>
+            <strong>{{ activeMembers().reduce(sumAttendance, 0) }}</strong
+            ><small>נרשמו על ידי הצוות</small>
+          </article>
+        </section>
+        <section class="panel full-panel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">רשימת קהילה</p>
+              <h2>כל המתאמנים</h2>
+            </div>
+            <span class="week-label">{{ filteredMembers().length }} תוצאות</span>
+          </div>
+          <input
+            id="member-search"
+            class="text-field member-search"
+            type="search"
+            aria-label="חיפוש מתאמנים"
+            placeholder="חיפוש לפי שם, אימייל, שם משתמש או טלפון"
+            [value]="memberSearch()"
+            (input)="memberSearch.set($any($event.target).value)"
+          />
+          <div class="member-table">
+            <div class="table-head">
+              <span>שם</span><span>סטטוס</span><span>הצטרפות</span><span>פעילות</span
+              ><span>יתרה · הכנסה</span><span>פעולות</span>
+            </div>
+            @if (!filteredMembers().length) {
+              <div class="empty-state"><strong>לא נמצאו מתאמנים התואמים לחיפוש.</strong></div>
+            }
+            @for (member of filteredMembers(); track member.id) {
+              <div class="table-row">
+                <button
+                  class="table-member member-detail-trigger"
+                  type="button"
+                  [attr.aria-label]="'פתיחת תיק ' + member.name"
+                  (click)="openMemberDetails(member.id)"
+                >
+                  <span class="person-avatar" [class.orange-avatar]="member.status !== 'active'">{{
+                    member.initials
+                  }}</span
+                  ><span class="member-detail-name"
+                    ><strong>{{ member.name }}</strong
+                    ><small>{{ member.email }}</small
+                    ><small class="member-join-date">הצטרפות · {{ member.joined }}</small></span
+                  ></button
+                ><span
+                  class="status-chip"
+                  [class.status-waiting]="member.status === 'pending'"
+                  [class.status-approved]="member.status === 'approved'"
+                  >{{
+                    member.status === 'pending'
+                      ? 'ממתינה לאישור'
+                      : member.status === 'approved'
+                        ? 'אושרה · ממתין להפעלה'
+                        : member.status === 'deactivated'
+                          ? 'מושבתת'
+                          : 'פעילה'
+                  }}</span
+                ><span class="table-date">{{ member.joined }}</span
+                ><span class="member-activity-cell"
+                  >{{ member.attendance }} אימונים<small>{{ member.points }} נק׳</small></span
+                ><span class="member-ledger-cell"
+                  >{{ remainingSessions(member.id) }} נותרו<small
+                    >₪{{ memberIncome(member.id) }} תועדו</small
+                  ></span
+                >
+                <div class="row-actions">
+                  @if (member.status === 'pending') {
+                    <button class="approve-button" type="button" (click)="approveMember(member.id)">
+                      אישור
+                    </button>
+                  } @else if (member.status === 'approved') {
+                    <button
+                      class="award-button"
+                      type="button"
+                      (click)="copyInvitationLink(member.id)"
+                    >
+                      העתקת קישור
+                    </button>
+                  } @else {
+                    <button
+                      class="award-button"
+                      type="button"
+                      (click)="openMemberPayment(member.id)"
+                    >
+                      תיעוד תשלום
+                    </button>
+                  }
+                  @if (member.status !== 'deactivated') {
+                    <button class="remove-button" type="button" (click)="removeMember(member.id)">
+                      הסרה
+                    </button>
+                  } @else {
+                    <button class="award-button" type="button" (click)="removeMember(member.id)">
+                      הפעלה מחדש
+                    </button>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        </section>
+        @if (memberDetailsOpen()) {
+          @if (selectedCoachMember(); as member) {
+            <div
+              class="member-detail-backdrop"
+              role="presentation"
+              tabindex="-1"
+              (click)="closeMemberDetails()"
+              (keydown.escape)="closeMemberDetails()"
+            >
+              <section
+                class="panel member-detail-modal"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="member-detail-title"
+                (click)="$event.stopPropagation()"
+              >
+                <header class="member-detail-header">
+                  <span class="person-avatar" [class.orange-avatar]="member.status !== 'active'">{{
+                    member.initials
+                  }}</span>
+                  <div class="member-detail-heading">
+                    <p class="eyebrow">תיק מתאמן</p>
+                    <h2 id="member-detail-title">{{ member.name }}</h2>
+                    <span>{{ member.email }}</span>
+                  </div>
+                  <span
+                    class="status-chip"
+                    [class.status-waiting]="member.status === 'pending'"
+                    [class.status-approved]="member.status === 'approved'"
+                    >{{
+                      member.status === 'pending'
+                        ? 'ממתינה לאישור'
+                        : member.status === 'approved'
+                          ? 'אושרה · ממתין להפעלה'
+                          : member.status === 'deactivated'
+                            ? 'מושבתת'
+                            : 'פעילה'
+                    }}</span
+                  ><button
+                    class="member-detail-close"
+                    type="button"
+                    aria-label="סגירת תיק המתאמן"
+                    autofocus
+                    (click)="closeMemberDetails()"
+                  >
+                    ×
+                  </button>
+                </header>
+                <div class="member-detail-body">
+                  <section class="member-detail-metrics" aria-label="סיכום מתאמן">
+                    <article>
+                      <span>גיל</span
+                      ><strong
+                        >{{ memberAge(member) ?? 'לא צוין'
+                        }}{{ memberAge(member) === null ? '' : ' שנים' }}</strong
+                      >
+                    </article>
+                    <article>
+                      <span>ותק באימונים</span><strong>{{ memberTrainingTenure(member) }}</strong>
+                    </article>
+                    <article>
+                      <span>אימונים</span><strong>{{ member.attendance }}</strong>
+                    </article>
+                    <article>
+                      <span>נקודות</span><strong>{{ member.points }}</strong>
+                    </article>
+                  </section>
+                  <section class="member-detail-section">
+                    <header><h3>פרטים וחבילה</h3></header>
+                    <div class="member-facts-grid">
+                      <div>
+                        <span>טלפון</span><strong>{{ member.phone || 'לא צוין' }}</strong>
+                      </div>
+                      <div>
+                        <span>הצטרפות</span><strong>{{ member.joined }}</strong>
+                      </div>
+                      <div>
+                        <span>חבילה</span
+                        ><strong
+                          >{{ member.purchasedSessions }} נרכשו ·
+                          {{ remainingSessions(member.id) }} נותרו</strong
+                        >
+                      </div>
+                      <div>
+                        <span>הכנסה שתועדה</span><strong>₪{{ memberIncome(member.id) }}</strong>
+                      </div>
+                    </div>
+                  </section>
+                  <section class="member-detail-section">
+                    <header class="member-history-header">
+                      <div>
+                        <h3>היסטוריית אימונים</h3>
+                        <span
+                          >{{ selectedCoachMemberWorkouts().length }} מתוך
+                          {{ selectedCoachMemberAllWorkouts().length }} רשומות מפורטות</span
+                        >
+                      </div>
+                      @if (selectedCoachMemberAllWorkouts().length > 5) {
+                        <button
+                          class="text-button"
+                          type="button"
+                          (click)="toggleMemberHistoryExpanded()"
+                        >
+                          {{ memberHistoryExpanded() ? '5 אחרונים' : 'כל ההיסטוריה' }}
+                          <span>←</span>
+                        </button>
+                      }
+                    </header>
+                    @if (member.attendance > selectedCoachMemberAllWorkouts().length) {
+                      <small class="history-count-note"
+                        >סיכום המתאמן/ת: {{ member.attendance }} אימונים ·
+                        {{ selectedCoachMemberAllWorkouts().length }} רשומות מפורטות זמינות</small
+                      >
+                    }
+                    @if (memberHistoryExpanded()) {
+                      <div class="member-history-filters">
+                        <label
+                          >סוג אימון<select
+                            class="text-field"
+                            [value]="memberHistoryTypeFilter()"
+                            (change)="memberHistoryTypeFilter.set($any($event.target).value)"
+                          >
+                            <option value="all">כל הסוגים</option>
+                            @for (type of selectedCoachMemberWorkoutTypes(); track type) {
+                              <option [value]="type">{{ type }}</option>
+                            }
+                          </select></label
+                        ><label
+                          >מתאריך<input
+                            class="text-field"
+                            type="date"
+                            [value]="memberHistoryFromDate()"
+                            (input)="memberHistoryFromDate.set($any($event.target).value)" /></label
+                        ><label
+                          >עד תאריך<input
+                            class="text-field"
+                            type="date"
+                            [value]="memberHistoryToDate()"
+                            (input)="memberHistoryToDate.set($any($event.target).value)"
+                        /></label>
+                      </div>
+                    }
+                    @for (workout of selectedCoachMemberWorkouts(); track workout.id) {
+                      <article class="member-workout-record">
+                        <div class="member-workout-record-heading">
+                          <div>
+                            <strong>{{ workout.name }}</strong
+                            ><span
+                              >{{ workout.date }} · {{ workout.time }}
+                              @if ((workout.durationMinutes ?? 0) > 0) {
+                                · {{ workout.durationMinutes }} דקות
+                              }
+                            </span>
+                          </div>
+                          <small>{{ workout.coach }}</small>
+                        </div>
+                        @if (editingCoachFeedbackWorkoutId() === workout.id) {
+                          <div class="coach-feedback-editor">
+                            <label class="field-label"
+                              >משוב לאימון הזה<textarea
+                                class="text-field text-area"
+                                [value]="coachFeedbackDraft()"
+                                (input)="coachFeedbackDraft.set($any($event.target).value)"
+                                placeholder="מה חשוב לזכור לקראת האימון הבא?"
+                              ></textarea>
+                            </label>
+                            <div>
+                              <button
+                                class="button button-outline"
+                                type="button"
+                                (click)="cancelCoachWorkoutFeedback()"
+                              >
+                                ביטול</button
+                              ><button
+                                class="button button-dark"
+                                type="button"
+                                (click)="saveCoachWorkoutFeedback(member.id, workout.id)"
+                              >
+                                שמירת משוב
+                              </button>
+                            </div>
+                          </div>
+                        } @else {
+                          <p>
+                            <strong>משוב המאמן:</strong>
+                            {{ workout.coachFeedback || 'עדיין לא הוזן משוב לאימון הזה.' }}
+                          </p>
+                          <button
+                            class="text-button member-coach-feedback-action"
+                            type="button"
+                            (click)="openCoachWorkoutFeedback(member.id, workout.id)"
+                          >
+                            {{ workout.coachFeedback ? 'עריכת משוב' : 'הוספת משוב' }} <span>✎</span>
+                          </button>
+                        }
+                        @if (memberFeedbackForWorkout(member.id, workout.workout); as feedback) {
+                          <div class="member-workout-trainee-feedback">
+                            <strong>משוב המתאמן/ת · {{ feedback.rating }}/5</strong>
+                            @if (feedback.note) {
+                              <p>{{ feedback.note }}</p>
+                            }
+                            @if (feedback.painAreas.length) {
+                              <small
+                                >דיווח על {{ feedback.painAreas.join(' · ') }} · עוצמה
+                                {{ feedback.painIntensity }}</small
+                              >
+                            }
+                          </div>
+                        }
+                      </article>
+                    } @empty {
+                      <div class="member-detail-empty">
+                        {{
+                          memberHistoryExpanded()
+                            ? 'לא נמצאו אימונים לפי הסינון.'
+                            : 'אין עדיין אימונים בהיסטוריה.'
+                        }}
+                      </div>
+                    }
+                  </section>
+                  <section class="member-detail-section member-pain-analysis">
+                    <header>
+                      <h3>דיווחי כאב ואי־נוחות</h3>
+                      <span>{{ selectedCoachMemberPainReports().length }} דיווחים</span>
+                    </header>
+                    @if (selectedCoachMemberPainAreas().length) {
+                      <div class="pain-area-summary">
+                        @for (area of selectedCoachMemberPainAreas(); track area.area) {
+                          <span>{{ area.area }} · {{ area.count }} דיווחים</span>
+                        }
+                      </div>
+                      <p>{{ selectedCoachMemberPainAnalysis() }}</p>
+                    } @else {
+                      <div class="member-detail-empty">לא נשמרו דיווחי כאב או אי־נוחות.</div>
+                    }
+                    <small
+                      >המידע מבוסס על דיווחי המתאמן/ת ואינו אבחנה רפואית. יש לברר תחושה נוכחית לפני
+                      התאמת האימון.</small
+                    >
+                  </section>
+                </div>
+              </section>
+            </div>
+          }
+        }
+      }
+
+      @if (role() === 'admin' && activeTab() === 'pricing') {
+        <section class="page-heading">
+          <div>
+            <p class="eyebrow">ניהול הסטודיו</p>
+            <h1>מחירון והנחות</h1>
+            <p class="heading-copy">מחיר לאימון, חבילות ומחיר אישי למתאמן.</p>
+          </div>
+          <span class="content-status"><span></span> דמו · ללא חיוב</span>
+        </section>
+        <section class="pricing-top-grid">
+          <article class="panel pricing-card class-rate-card">
+            <div class="pricing-card-heading">
+              <span class="pricing-icon"><svg lucideDumbbell size="18"></svg></span>
+              <div>
+                <p class="eyebrow">מחיר בסיס</p>
+                <h2>אימון בודד</h2>
+              </div>
+            </div>
+            <label class="field-label" for="single-class-price">מחיר לאימון</label>
+            <div class="money-input">
+              <span>₪</span
+              ><input
+                id="single-class-price"
+                type="number"
+                min="1"
+                step="5"
+                [value]="classPriceDraft()"
+                (input)="classPriceDraft.set($any($event.target).value)"
+              />
+            </div>
+            <button class="button button-dark" type="button" (click)="saveSingleClassPrice()">
+              שמירת מחיר</button
+            ><small>{{
+              isDemoSession() ? 'המחיר נשמר בדמו בלבד.' : 'המחיר נשמר במחירון הסטודיו.'
+            }}</small>
+          </article>
+          <article class="panel recorded-income-card">
+            <p class="eyebrow">תשלומים שתועדו</p>
+            <strong>₪{{ recordedIncome() }}</strong
+            ><small>{{ memberPayments().length }} רישומים · ללא חיוב דרך YOCA</small>
+          </article>
+        </section>
+        <section class="panel pricing-packages-panel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">מחיר לפי כמות</p>
+              <h2>חבילות אימונים</h2>
+            </div>
+            <span class="package-count">{{ trainingPackages().length }} חבילות</span>
+          </div>
+          <div class="package-price-list">
+            @for (item of trainingPackages(); track item.id) {
+              <div class="package-price-row">
+                <label class="package-name-input"
+                  ><span class="visually-hidden">שם החבילה</span
+                  ><input
+                    type="text"
+                    [attr.aria-label]="'שם ' + item.name"
+                    [value]="item.name"
+                    (change)="updatePackageName(item.id, $any($event.target).value)"
+                /></label>
+                <label class="package-sessions-input"
+                  ><span class="visually-hidden">מספר אימונים</span
+                  ><input
+                    type="number"
+                    min="1"
+                    step="1"
+                    [attr.aria-label]="'מספר אימונים בחבילת ' + item.name"
+                    [value]="item.sessions"
+                    (change)="updatePackageSessions(item.id, $any($event.target).value)"
+                  /><span>אימונים</span></label
+                >
+                <label class="package-price-input"
+                  ><span>₪</span
+                  ><input
+                    type="number"
+                    min="1"
+                    step="10"
+                    [attr.aria-label]="'מחיר ' + item.name"
+                    [value]="item.price"
+                    (change)="updatePackagePrice(item.id, $any($event.target).value)"
+                /></label>
+                <span class="price-demo-label"
+                  >₪{{ item.price / item.sessions | number: '1.0-0' }} לאימון</span
+                >
+                <button
+                  class="remove-package"
+                  type="button"
+                  [attr.aria-label]="'מחיקת ' + item.name"
+                  title="מחיקת חבילה"
+                  (click)="requestDeleteTrainingPackage(item.id)"
+                >
+                  ×
+                </button>
+              </div>
+              @if (packageDeleteConfirmationId() === item.id) {
+                <div class="package-delete-confirm" role="alert">
+                  <span>למחוק את {{ item.name }} מהמחירון?</span
+                  ><button type="button" (click)="deleteTrainingPackage(item.id)">מחיקה</button
+                  ><button type="button" (click)="cancelDeleteTrainingPackage()">ביטול</button>
+                </div>
+              }
+            } @empty {
+              <div class="pricing-empty">
+                <strong>אין חבילות במחירון</strong><small>אפשר להוסיף חבילה חדשה למטה.</small>
+              </div>
+            }
+          </div>
+          <div class="add-package-form">
+            <div class="add-package-heading">
+              <strong>חבילה חדשה</strong><span>הוספה למחירון</span>
+            </div>
+            <label class="visually-hidden" for="new-package-name">שם החבילה</label
+            ><input
+              id="new-package-name"
+              class="text-field"
+              [value]="newPackageName()"
+              (input)="newPackageName.set($any($event.target).value)"
+              placeholder="שם החבילה"
+            /><label class="visually-hidden" for="new-package-sessions">מספר אימונים</label
+            ><input
+              id="new-package-sessions"
+              class="text-field"
+              type="number"
+              min="1"
+              [value]="newPackageSessions()"
+              (input)="newPackageSessions.set($any($event.target).value)"
+              placeholder="אימונים"
+            /><label class="visually-hidden" for="new-package-price">מחיר החבילה</label>
+            <div class="money-input compact-money">
+              <span>₪</span
+              ><input
+                id="new-package-price"
+                type="number"
+                min="1"
+                [value]="newPackagePrice()"
+                (input)="newPackagePrice.set($any($event.target).value)"
+                placeholder="מחיר"
+              />
+            </div>
+            <button class="button button-outline" type="button" (click)="addTrainingPackage()">
+              ＋ הוספה
+            </button>
+          </div>
+        </section>
+        <section class="payment-ledger-grid">
+          <article class="panel pricing-card payment-entry-card">
+            <div class="pricing-card-heading">
+              <span class="pricing-icon"><svg lucideCheck size="18"></svg></span>
+              <div>
+                <p class="eyebrow">תשלום שבוצע מחוץ למערכת</p>
+                <h2>תיעוד תשלום וחבילה</h2>
+              </div>
+            </div>
+            <label class="field-label" for="payment-member">מתאמן</label
+            ><select
+              id="payment-member"
+              class="text-field"
+              [value]="paymentMemberId()"
+              (change)="paymentMemberId.set(+$any($event.target).value)"
+            >
+              @for (member of activeMembers(); track member.id) {
+                <option [value]="member.id">{{ member.name }}</option>
+              }</select
+            ><label class="field-label" for="payment-package">סוג רכישה</label
+            ><select
+              id="payment-package"
+              class="text-field"
+              [value]="paymentPackageId()"
+              (change)="
+                paymentPackageId.set(
+                  $any($event.target).value === '0' ? 0 : $any($event.target).value
+                )
+              "
+            >
+              <option value="0" [selected]="paymentPackageId() === 0">
+                אימון בודד · 1 אימון · ₪{{ singleClassPrice() }}
+              </option>
+              @for (item of trainingPackages(); track item.id) {
+                <option [value]="item.id" [selected]="item.id === paymentPackageId()">
+                  {{ item.name }} · {{ item.sessions }} אימונים · ₪{{ item.price }}
+                </option>
+              }
+            </select>
+            <div class="payment-input-row">
+              <label
+                ><span class="field-label">כמות חבילות / אימונים</span
+                ><input
+                  class="text-field"
+                  type="number"
+                  min="1"
+                  step="1"
+                  [value]="paymentPackageCount()"
+                  (input)="paymentPackageCount.set($any($event.target).value)" /></label
+              ><label
+                ><span class="field-label">אמצעי תשלום</span
+                ><select
+                  class="text-field"
+                  [value]="paymentMethod()"
+                  (change)="paymentMethod.set($any($event.target).value)"
+                >
+                  <option value="cash">מזומן</option>
+                  <option value="bit">Bit</option>
+                  <option value="paybox">PayBox</option>
+                </select></label
+              >
+            </div>
+            <button
+              class="button button-dark button-wide"
+              type="button"
+              [disabled]="paymentSaving()"
+              (click)="recordMemberPayment()"
+            >
+              {{ paymentSaving() ? 'שומר…' : 'רישום תשלום שהתקבל' }}</button
+            ><small class="privacy-note"
+              >הרישום מעדכן יתרת אימונים והכנסה בלבד. לא מתבצע חיוב.</small
+            >
+          </article>
+          <article class="panel payment-history-panel">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">יומן מאמן</p>
+                <h2>תשלומים אחרונים</h2>
+              </div>
+              <strong class="package-count">₪{{ recordedIncome() }}</strong>
+            </div>
+            @for (payment of memberPayments(); track payment.id) {
+              <div class="payment-history-row">
+                <div>
+                  <strong>{{ payment.memberName }}</strong
+                  ><small
+                    >{{ payment.packageName }} · {{ payment.sessions }} אימונים ·
+                    {{ payment.date }}</small
+                  >
+                </div>
+                <div class="payment-history-amount">
+                  <strong>₪{{ payment.paidAmount }}</strong
+                  ><small
+                    >{{ payment.discountAmount ? 'הנחה ₪' + payment.discountAmount + ' · ' : ''
+                    }}{{ paymentMethodLabel(payment.method) }}</small
+                  >
+                </div>
+              </div>
+            }
+          </article>
+        </section>
+        <section class="pricing-bottom-grid">
+          <article class="panel pricing-card member-discount-card">
+            <div class="pricing-card-heading">
+              <span class="pricing-icon copper"><svg lucideTag size="18"></svg></span>
+              <div>
+                <p class="eyebrow">הטבה אישית</p>
+                <h2>הנחה למתאמן</h2>
+              </div>
+            </div>
+            <label class="field-label" for="discount-member">מתאמן</label
+            ><select
+              id="discount-member"
+              class="text-field"
+              [value]="discountMemberId()"
+              (change)="discountMemberId.set(+$any($event.target).value)"
+            >
+              @for (member of activeMembers(); track member.id) {
+                <option [value]="member.id">{{ member.name }}</option>
+              }
+            </select>
+            <div class="discount-input-row">
+              <div class="discount-kind" role="radiogroup" aria-label="סוג הנחה">
+                <button
+                  type="button"
+                  role="radio"
+                  [attr.aria-checked]="discountKind() === 'percent'"
+                  [class.selected]="discountKind() === 'percent'"
+                  (click)="discountKind.set('percent')"
+                >
+                  %</button
+                ><button
+                  type="button"
+                  role="radio"
+                  [attr.aria-checked]="discountKind() === 'amount'"
+                  [class.selected]="discountKind() === 'amount'"
+                  (click)="discountKind.set('amount')"
+                >
+                  ₪
+                </button>
+              </div>
+              <input
+                class="text-field discount-value"
+                type="number"
+                min="1"
+                [max]="discountKind() === 'percent' ? 100 : null"
+                aria-label="ערך ההנחה"
+                [value]="discountValue()"
+                (input)="discountValue.set($any($event.target).value)"
+              />
+            </div>
+            <label class="field-label" for="discount-note">הערה <span>לא חובה</span></label
+            ><input
+              id="discount-note"
+              class="text-field"
+              [value]="discountNote()"
+              (input)="discountNote.set($any($event.target).value)"
+              placeholder="סיבת ההנחה"
+            /><button class="button button-dark" type="button" (click)="applyMemberDiscount()">
+              שמירת הנחה
+            </button>
+          </article>
+          <section class="panel discounts-list-panel">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">התאמה אישית</p>
+                <h2>הנחות פעילות</h2>
+              </div>
+              <span class="package-count">{{ memberDiscounts().length }}</span>
+            </div>
+            @if (discountsWithMembers().length) {
+              @for (discount of discountsWithMembers(); track discount.id) {
+                <div class="discount-list-row">
+                  <span class="discount-member-avatar">{{ discount.member?.initials }}</span>
+                  <div class="discount-member-name">
+                    <strong>{{ discount.member?.name }}</strong
+                    ><small>{{ discount.note || 'הנחה אישית' }}</small>
+                  </div>
+                  <strong class="discount-amount">{{
+                    discount.kind === 'percent' ? discount.value + '%' : '₪' + discount.value
+                  }}</strong
+                  ><button
+                    class="remove-discount"
+                    type="button"
+                    [attr.aria-label]="'הסרת הנחה עבור ' + discount.member?.name"
+                    (click)="removeMemberDiscount(discount.id)"
+                  >
+                    ×
+                  </button>
+                </div>
+              }
+            } @else {
+              <div class="pricing-empty">
+                <span class="pricing-icon"><svg lucideTag size="17"></svg></span>
+                <div><strong>אין הנחות פעילות</strong><small>הוסיפו הנחה דרך הטופס.</small></div>
+              </div>
+            }
+          </section>
+        </section>
+      }
+
+      @if (role() === 'admin' && activeTab() === 'board') {
+        <section class="page-heading">
+          <div>
+            <p class="eyebrow">עדכונים לקהילה</p>
+            <h1>לוח מודעות</h1>
+            <p class="heading-copy">הודעות ועדכונים שמופיעים באזור האישי של המתאמנים.</p>
+          </div>
+        </section>
+        <section class="board-layout">
+          <article class="panel compose-panel">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">הודעה חדשה</p>
+                <h2>מה חדש בסטודיו?</h2>
+              </div>
+              <span class="compose-icon">✎</span>
+            </div>
+            <label class="field-label" for="announcement-title">כותרת</label
+            ><input
+              id="announcement-title"
+              class="text-field"
+              [value]="announcementTitle()"
+              (input)="announcementTitle.set($any($event.target).value)"
+              placeholder="למשל: שינוי בלוח השיעורים"
+            /><label class="field-label" for="announcement-body">תוכן ההודעה</label
+            ><textarea
+              id="announcement-body"
+              class="text-field text-area"
+              [value]="announcementBody()"
+              (input)="announcementBody.set($any($event.target).value)"
+              placeholder="כתבי הודעה למתאמנים..."
+            ></textarea
+            ><button
+              class="button button-dark button-wide"
+              type="button"
+              (click)="publishAnnouncement()"
+            >
+              פרסום בלוח המודעות <span>←</span>
+            </button>
+          </article>
+          <div class="board-feed">
+            <div class="feed-title">
+              <h2>פורסם לאחרונה</h2>
+              <span>{{ announcements().length }} הודעות</span>
+            </div>
+            @for (announcement of announcements(); track announcement.id) {
+              <article class="panel feed-item">
+                <div class="feed-item-top">
+                  <span class="feed-tag">עדכון סטודיו</span><time>{{ announcement.date }}</time>
+                </div>
+                <h3>{{ announcement.title }}</h3>
+                <p>{{ announcement.body }}</p>
+                <button
+                  class="text-button"
+                  type="button"
+                  (click)="removeAnnouncement(announcement.id)"
+                >
+                  הסרה <span>×</span>
+                </button>
+              </article>
+            }
+          </div>
+        </section>
+      }
+
+      @if (role() === 'admin' && activeTab() === 'content') {
+        <section class="page-heading">
+          <div>
+            <p class="eyebrow">תוכן לסטודיו</p>
+            <h1>תוכן לרשתות</h1>
+            <p class="heading-copy">מפרסמים באינסטגרם כרגיל, ומשתפים כאן את הפוסט עם המתאמנים.</p>
+          </div>
+        </section>
+        <section class="content-layout">
+          <article class="panel compose-panel coach-post-form">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">פוסט שכבר פורסם</p>
+                <h2>שיתוף בדף הבית</h2>
+              </div>
+              <span class="compose-icon">↗</span>
+            </div>
+            <label class="field-label" for="coach-post-title">כותרת</label
+            ><input
+              id="coach-post-title"
+              class="text-field"
+              [value]="coachPostTitle()"
+              (input)="coachPostTitle.set($any($event.target).value)"
+              placeholder="למשל: קאקאסנה, תנוחת העורב"
+            /><label class="field-label" for="coach-post-url">קישור לפוסט באינסטגרם</label
+            ><input
+              id="coach-post-url"
+              class="text-field"
+              type="url"
+              inputmode="url"
+              [value]="coachPostUrl()"
+              (input)="coachPostUrl.set($any($event.target).value)"
+              placeholder="https://www.instagram.com/p/..."
+            /><label class="field-label" for="coach-post-explanations"
+              >הסברים נוספים <span>לא חובה · שורה לכל הסבר</span></label
+            ><textarea
+              id="coach-post-explanations"
+              class="text-field text-area"
+              [value]="coachPostExplanations()"
+              (input)="coachPostExplanations.set($any($event.target).value)"
+              placeholder="מיקום הברך על הזרוע&#10;העברת משקל הדרגתית&#10;הרמת הרגל מתוך יציבות"
+            ></textarea
+            ><button
+              class="button button-dark button-wide"
+              type="button"
+              (click)="publishCoachPost()"
+            >
+              פרסום בדף הבית של המתאמנים <span>←</span>
+            </button>
+          </article>
+          <aside class="content-aside">
+            <div class="aside-heading">
+              <h2>מוצג למתאמנים</h2>
+              <span>Instagram</span>
+            </div>
+            @if (latestCoachPost(); as coachPost) {
+              <article class="panel draft-item">
+                <span class="draft-state">{{ coachPost.publishedLabel }}</span>
+                <p>
+                  <strong>{{ coachPost.title }}</strong>
+                </p>
+                <a
+                  class="text-button"
+                  [href]="coachPost.permalink"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  >פתיחת הפוסט באינסטגרם ↗</a
+                >
+                @if (coachPost.explanations.length) {
+                  <div class="draft-channels">
+                    {{ coachPost.explanations.join(' · ') }}
+                  </div>
+                }
+              </article>
+            } @else {
+              <article class="panel draft-item">
+                <span class="draft-state">עדיין אין פוסט שמור</span>
+                <p>אפשר להוסיף שיתוף מהטופס.</p>
+              </article>
+            }
+            <div class="channel-note">
+              <strong>הפוסט המקורי נשאר באינסטגרם</strong>
+              <p>קישור כאן יציג את ההטמעה וההסברים בדף הבית. הוא לא מפרסם תוכן לאינסטגרם.</p>
+            </div>
+          </aside>
+        </section>
+      }
+
+      @if (role() === 'member' && activeTab() === 'updates') {
+        <section class="page-heading member-page-heading">
+          <div>
+            <p class="eyebrow">הסטודיו מדבר איתך</p>
+            <h1>עדכונים והודעות</h1>
+            <p class="heading-copy">כל מה שחשוב לדעת, במקום אחד.</p>
+          </div>
+          <span class="member-chip">{{ announcements().length }} עדכונים</span>
+        </section>
+        <section class="member-feed">
+          @for (announcement of announcements(); track announcement.id) {
+            <article class="panel member-feed-item">
+              <div class="feed-item-top">
+                <span class="feed-tag">עדכון סטודיו</span><time>{{ announcement.date }}</time>
+              </div>
+              <h2>{{ announcement.title }}</h2>
+              <p>{{ announcement.body }}</p>
+            </article>
+          }
+        </section>
+      }
+
+      @if ((role() === 'member' || role() === 'admin') && activeTab() === 'member-profile') {
+        <section class="page-heading member-page-heading">
+          <div>
+            <p class="eyebrow">
+              {{ role() === 'admin' ? profileText('coachArea') : 'החשבון שלך' }}
+            </p>
+            <h1>פרטים אישיים</h1>
+            <p class="heading-copy">
+              {{
+                role() === 'admin'
+                  ? profileText('coachProfileDescription')
+                  : 'הפרטים שלך עוזרים לנו לשמור איתך על קשר.'
+              }}
+            </p>
+          </div>
+        </section>
+        <section class="profile-layout">
+          <article class="panel profile-form-panel">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">
+                  {{
+                    role() === 'admin'
+                      ? profileText('coachProfileLabel')
+                      : profileText('memberProfileLabel')
+                  }}
+                </p>
+                <h2>המידע האישי שלך</h2>
+              </div>
+              <span class="profile-large-avatar">{{
+                role() === 'admin' ? coachInitials() : currentMember()?.initials
+              }}</span>
+            </div>
+            <div class="profile-fields">
+              <label class="field-label" for="member-name">שם מלא</label
+              ><input
+                id="member-name"
+                class="text-field"
+                autocomplete="name"
+                [value]="profileName()"
+                (input)="updateProfileName($any($event.target).value)"
+              /><label class="field-label" for="member-email">כתובת אימייל</label
+              ><input
+                id="member-email"
+                class="text-field"
+                type="email"
+                autocomplete="email"
+                [value]="profileEmail()"
+                (input)="updateProfileEmail($any($event.target).value)"
+              /><label class="field-label" for="member-phone">טלפון</label
+              ><input
+                id="member-phone"
+                class="text-field"
+                type="tel"
+                autocomplete="tel"
+                [value]="profilePhone()"
+                (input)="updateProfilePhone($any($event.target).value)"
+              /><label class="field-label" for="member-birthday">תאריך לידה</label
+              ><input
+                id="member-birthday"
+                class="text-field"
+                type="date"
+                [value]="profileBirthDate()"
+                (input)="updateProfileBirthDate($any($event.target).value)"
+              />
+              @if (role() === 'member') {
+                <label class="field-label" for="member-training-since">תחילת אימונים</label
+                ><input
+                  id="member-training-since"
+                  class="text-field"
+                  type="date"
+                  [value]="memberTrainingSince()"
+                  (input)="updateProfileTrainingSince($any($event.target).value)"
+                />
+              }
+            </div>
+            <div class="member-address-setting">
+              <span class="field-label">לשון פנייה</span>
+              <div class="gender-options" role="radiogroup" aria-label="בחירת לשון פנייה">
+                @for (option of memberAddressOptions; track option.id) {
+                  <button
+                    class="gender-option"
+                    [class.selected]="profileAddress() === option.id"
+                    type="button"
+                    role="radio"
+                    [attr.aria-checked]="profileAddress() === option.id"
+                    (click)="updateProfileAddress(option.id)"
+                  >
+                    {{ option.label }}
+                  </button>
+                }
+              </div>
+              <small>משפיע רק על הניסוח באפליקציה.</small>
+            </div>
+            <button class="button button-dark" type="button" (click)="saveMemberDetails()">
+              שמירת פרטים</button
+            ><small class="privacy-note">{{
+              isDemoSession() ? 'העדכונים נשמרים בדמו בלבד.' : 'הפרטים נשמרים בחשבון שלך.'
+            }}</small>
+          </article>
+          <aside class="profile-side-note">
+            <span>i</span>
+            <h2>הפרטים שלך נשארים שלך</h2>
+            <p>
+              {{
+                role() === 'admin'
+                  ? profileText('coachProfileSideNote')
+                  : profileText('memberProfileSideNote')
+              }}
+            </p>
+          </aside>
+        </section>
+      }
+
+      @if (role() === 'member' && activeTab() === 'member-settings') {
+        <section class="page-heading member-page-heading">
+          <div>
+            <p class="eyebrow">החשבון שלך</p>
+            <h1>הגדרות אישיות</h1>
+            <p class="heading-copy">{{ profileText('memberSettingsIntro') }}</p>
+          </div>
+        </section>
+        <section class="settings-layout">
+          <article class="panel settings-panel">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">עדכונים ותזכורות</p>
+                <h2>מה חשוב לך לקבל?</h2>
+              </div>
+              <span class="settings-icon">⌁</span>
+            </div>
+            <label class="setting-row"
+              ><span
+                ><strong>תזכורת לפני אימון</strong
+                ><small>ברירת מחדל: שעה לפני תחילת האימון</small></span
+              ><input
+                type="checkbox"
+                [checked]="reminderEnabled()"
+                (change)="reminderEnabled.set($any($event.target).checked)" /><span
+                class="toggle-track"
+              ></span
+            ></label>
+            <div class="reminder-delay-row">
+              <label class="reminder-delay-copy" for="reminder-lead-time"
+                ><strong>מתי להזכיר?</strong><br /><small>לפני תחילת האימון</small></label
+              ><select
+                id="reminder-lead-time"
+                class="text-field"
+                [value]="reminderLeadMinutes()"
+                [disabled]="!reminderEnabled()"
+                (change)="reminderLeadMinutes.set(+$any($event.target).value)"
+              >
+                @for (option of reminderLeadOptions; track option.minutes) {
+                  <option
+                    [value]="option.minutes"
+                    [selected]="option.minutes === reminderLeadMinutes()"
+                  >
+                    {{ option.label }} לפני האימון
+                  </option>
+                }
+              </select>
+            </div>
+            <label class="setting-row"
+              ><span
+                ><strong>הודעות ועדכונים מהסטודיו</strong
+                ><small>שינויים בלוח, אירועים ועדכונים חשובים</small></span
+              ><input
+                type="checkbox"
+                [checked]="updatesEnabled()"
+                (change)="updatesEnabled.set($any($event.target).checked)" /><span
+                class="toggle-track"
+              ></span></label
+            ><button class="button button-dark" type="button" (click)="saveMemberPreferences()">
+              שמירת העדפות
+            </button>
+          </article>
+          <article class="panel settings-account">
+            <p class="eyebrow">החשבון שלך</p>
+            <h2>{{ currentMember()?.name }}</h2>
+            <p>{{ currentMember()?.email }}</p>
+            <button class="text-button" type="button" (click)="selectTab('member-profile')">
+              עדכון פרטים אישיים <span>←</span>
+            </button>
+          </article>
+        </section>
+      }
+
+      @if (role() === 'member' && activeTab() === 'progress') {
+        <section class="page-heading">
+          <div>
+            <p class="eyebrow">המסע שלך ב־YOCA</p>
+            <h1>ההתקדמות שלי</h1>
+            <p class="heading-copy">ההתקדמות שלך, אימון אחר אימון.</p>
+          </div>
+        </section>
+        <section class="member-progress-grid">
+          <article class="personal-hero">
+            <div class="personal-hero-copy">
+              <p class="eyebrow">הנקודות שלך</p>
+              <strong>{{ currentMember()?.points }}</strong
+              ><span>נקודות התמדה</span>
+              <p>{{ profileText('memberProgressStreak') }}</p>
+              <button class="button button-light" type="button" (click)="selectTab('workouts')">
+                בחירת אימון <span>←</span>
+              </button>
+            </div>
+            <div class="orbit-number">{{ currentMember()?.attendance }}<small>אימונים</small></div>
+          </article>
+          <article class="panel streak-panel">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">החודש שלך</p>
+                <h2>עקביות מרגיש טוב</h2>
+              </div>
+              <span class="streak-badge">✳ רצף 4</span>
+            </div>
+            <div class="week-dots">
+              <div class="day-dot done"><span>א׳</span><b>✓</b></div>
+              <div class="day-dot done"><span>ב׳</span><b>✓</b></div>
+              <div class="day-dot"><span>ג׳</span><b>·</b></div>
+              <div class="day-dot done"><span>ד׳</span><b>✓</b></div>
+              <div class="day-dot today"><span>ה׳</span><b>היום</b></div>
+              <div class="day-dot"><span>ו׳</span><b>·</b></div>
+              <div class="day-dot"><span>ש׳</span><b>·</b></div>
+            </div>
+            <p class="streak-copy">הגעת ל־{{ currentMember()?.attendance }} אימונים החודש.</p>
+          </article>
+          <article class="panel workout-history-list">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">האימונים שלך</p>
+                <h2>היסטוריית אימונים</h2>
+              </div>
+              <span class="history-count">{{ unreadWorkoutHistoryCount() }} לא נקראו</span>
+            </div>
+            <div class="history-items" role="listbox" aria-label="בחירת אימון מההיסטוריה">
+              @for (workout of currentMemberWorkoutHistory(); track workout.id) {
+                <button
+                  class="history-item"
+                  [class.selected]="selectedWorkoutHistoryId() === workout.id"
+                  type="button"
+                  role="option"
+                  [attr.aria-selected]="selectedWorkoutHistoryId() === workout.id"
+                  (click)="openWorkoutDetails(workout.id)"
+                >
+                  <span class="history-date"
+                    ><strong>{{ workout.date }}</strong
+                    ><small>{{ workout.time }}</small></span
+                  ><span class="history-class"
+                    ><span class="history-class-title"
+                      ><strong>{{ workout.name }}</strong>
+                      @if (!readWorkoutHistoryIds().includes(workout.id)) {
+                        <span class="unread-workout-badge">לא נקרא</span>
+                      }</span
+                    ><small
+                      >{{ workout.coach }}
+                      @if ((workout.durationMinutes ?? 0) > 0) {
+                        · {{ workout.durationMinutes }} דקות
+                      }
+                    </small></span
+                  ><svg class="history-chevron" lucideChevronLeft size="16"></svg>
+                </button>
+              } @empty {
+                <div class="history-empty-state">
+                  <strong>עדיין אין אימונים בהיסטוריה</strong
+                  ><span>אימונים שהושלמו יופיעו כאן.</span>
+                </div>
+              }
+            </div>
+          </article>
+        </section>
+        @if (workoutDetailsModalOpen()) {
+          @if (selectedWorkoutHistory(); as workout) {
+            <div
+              class="feedback-modal-backdrop workout-details-backdrop"
+              role="presentation"
+              (click)="closeWorkoutDetails()"
+            >
+              <section
+                class="panel workout-details-modal"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="workout-details-title"
+                (click)="$event.stopPropagation()"
+              >
+                <header class="feedback-modal-header">
+                  <div>
+                    <p class="eyebrow">פרטי אימון</p>
+                    <h2 id="workout-details-title">{{ workout.name }}</h2>
+                    <small
+                      >{{ workout.date }} · {{ workout.time }}
+                      @if ((workout.durationMinutes ?? 0) > 0) {
+                        · {{ workout.durationMinutes }} דקות
+                      }
+                    </small>
+                  </div>
+                  <button
+                    class="feedback-modal-close"
+                    type="button"
+                    aria-label="סגירת פרטי האימון"
+                    autofocus
+                    (click)="closeWorkoutDetails()"
+                  >
+                    ×
+                  </button>
+                </header>
+                <div class="feedback-modal-content">
+                  <div class="workout-detail-meta">
+                    <span><svg lucideCalendarDays size="14"></svg>{{ workout.date }}</span
+                    ><span>{{ workout.time }}</span
+                    ><span>{{ workout.coach }}</span>
+                  </div>
+                  <section class="history-feedback-block coach-history-feedback">
+                    <div class="history-feedback-heading">
+                      <span><svg lucideMessageCircle size="15"></svg></span>
+                      <h3>משוב המאמן</h3>
+                    </div>
+                    <p>{{ workout.coachFeedback }}</p>
+                  </section>
+                  <button
+                    class="history-feedback-block member-history-feedback history-feedback-action"
+                    type="button"
+                    [attr.aria-label]="
+                      (selectedWorkoutFeedback()
+                        ? 'עריכת המשוב שלך לאימון '
+                        : 'כתיבת משוב לאימון ') + workout.name
+                    "
+                    (click)="openWorkoutFeedback(workout.workout)"
+                  >
+                    <span class="history-feedback-heading"
+                      ><span><svg lucideHeart size="15"></svg></span>
+                      <h3>המשוב שלך</h3>
+                      <span class="history-feedback-open"
+                        >{{ selectedWorkoutFeedback() ? 'עריכת המשוב' : 'כתיבת משוב' }}
+                        <span aria-hidden="true">←</span></span
+                      ></span
+                    >
+                    @if (selectedWorkoutFeedback(); as feedback) {
+                      <div class="history-member-rating">
+                        <svg lucideStar size="14"></svg><strong>{{ feedback.rating }}/5</strong
+                        ><span>הדירוג שלך</span>
+                      </div>
+                      @if (feedback.note) {
+                        <p>{{ feedback.note }}</p>
+                      }
+                      <small>{{
+                        feedback.painAreas.length
+                          ? 'אזורי אי־נוחות: ' + feedback.painAreas.join(' · ')
+                          : 'לא דווחה אי־נוחות'
+                      }}</small>
+                    } @else {
+                      <p>עוד לא שיתפת משוב על האימון הזה.</p>
+                    }
+                  </button>
+                </div>
+              </section>
+            </div>
+          }
+        }
+        @if (workoutFeedbackModalOpen()) {
+          <div class="feedback-modal-backdrop" role="presentation" (click)="closeWorkoutFeedback()">
+            <section
+              class="panel workout-feedback-modal"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="workout-feedback-modal-title"
+              (click)="$event.stopPropagation()"
+            >
+              <header class="feedback-modal-header">
+                <div>
+                  <p class="eyebrow">החוויה שלך</p>
+                  <h2 id="workout-feedback-modal-title">
+                    משוב על {{ selectedWorkoutHistory().name }}
+                  </h2>
+                  <small
+                    >{{ selectedWorkoutHistory().date }} ·
+                    {{ selectedWorkoutHistory().time }}</small
+                  >
+                </div>
+                <button
+                  class="feedback-modal-close"
+                  type="button"
+                  aria-label="סגירת חלון המשוב"
+                  autofocus
+                  (click)="closeWorkoutFeedback()"
+                >
+                  ×
+                </button>
+              </header>
+              <div class="feedback-modal-content">
+                <div class="feedback-rating-row">
+                  <span>איך היה?</span>
+                  <div class="rating-stars" role="group" aria-label="דירוג האימון">
+                    @for (star of [1, 2, 3, 4, 5]; track star) {
+                      <button
+                        class="rating-star"
+                        [class.selected]="feedbackRating() >= star"
+                        type="button"
+                        [attr.aria-label]="'דירוג ' + star + ' מתוך 5'"
+                        [attr.aria-pressed]="feedbackRating() === star"
+                        (click)="feedbackRating.set(star)"
+                      >
+                        <svg lucideStar size="22"></svg>
+                      </button>
+                    }
+                  </div>
+                </div>
+
+                <div class="pain-question">
+                  <div><strong>כאב או אי־נוחות?</strong><small>דיווח לפי תחושה</small></div>
+                  <div class="pain-choice" role="group" aria-label="דיווח כאב">
+                    <button
+                      type="button"
+                      [class.selected]="!painReported()"
+                      (click)="painReported.set(false); selectedPainAreaIds.set([])"
+                    >
+                      לא</button
+                    ><button
+                      type="button"
+                      [class.selected]="painReported()"
+                      (click)="painReported.set(true)"
+                    >
+                      כן
+                    </button>
+                  </div>
+                </div>
+
+                @if (painReported()) {
+                  <div class="pain-map-section">
+                    <div class="pain-map-heading">
+                      <strong>איפה מורגש?</strong>
+                      <div class="body-view-toggle" role="tablist" aria-label="צד הגוף">
+                        <button
+                          type="button"
+                          role="tab"
+                          [attr.aria-selected]="bodyView() === 'front'"
+                          [class.selected]="bodyView() === 'front'"
+                          (click)="bodyView.set('front')"
+                        >
+                          קדמי</button
+                        ><button
+                          type="button"
+                          role="tab"
+                          [attr.aria-selected]="bodyView() === 'back'"
+                          [class.selected]="bodyView() === 'back'"
+                          (click)="bodyView.set('back')"
+                        >
+                          אחורי
+                        </button>
+                      </div>
+                    </div>
+                    <div class="body-map-layout">
+                      <div
+                        class="body-map"
+                        [attr.aria-label]="
+                          bodyView() === 'front' ? 'מפת גוף קדמית' : 'מפת גוף אחורית'
+                        "
+                      >
+                        <svg class="body-silhouette" viewBox="0 0 240 400" aria-hidden="true">
+                          <circle cx="120" cy="38" r="21"></circle>
+                          <rect x="91" y="202" width="25" height="174" rx="12.5"></rect>
+                          <rect x="124" y="202" width="25" height="174" rx="12.5"></rect>
+                          <path
+                            d="M104 66 C94 69 85 76 80 86 L60 136 C56 146 62 153 70 151 L91 109 L89 168 C88 183 94 193 102 198 L100 215 C111 226 129 226 140 215 L138 198 C146 193 152 183 151 168 L149 109 L170 151 C178 153 184 146 180 136 L160 86 C155 76 146 69 136 66 C130 73 110 73 104 66 Z"
+                          ></path>
+                        </svg>
+                        @for (region of visibleBodyRegions(); track region.id) {
+                          <button
+                            class="body-hotspot"
+                            [class.selected]="selectedPainAreaIds().includes(region.id)"
+                            type="button"
+                            [style.left.%]="region.x"
+                            [style.top.%]="region.y"
+                            [attr.aria-label]="'סימון כאב באזור ' + region.label"
+                            [attr.aria-pressed]="selectedPainAreaIds().includes(region.id)"
+                            (click)="togglePainArea(region.id)"
+                          >
+                            <span></span>
+                          </button>
+                        }
+                      </div>
+                      <div class="body-map-legend">
+                        <span>בחירת אזור בגוף</span>
+                        @if (selectedPainAreas().length) {
+                          <div class="selected-area-list">
+                            @for (area of selectedPainAreas(); track area.id) {
+                              <span>{{ area.label }}</span>
+                            }
+                          </div>
+                        }
+                      </div>
+                    </div>
+                    <div class="pain-intensity">
+                      <span>עוצמה</span>
+                      <div role="group" aria-label="עוצמת הכאב">
+                        @for (level of painIntensityOptions; track level.id) {
+                          <button
+                            type="button"
+                            [class.selected]="painIntensity() === level.id"
+                            [attr.aria-pressed]="painIntensity() === level.id"
+                            (click)="painIntensity.set(level.id)"
+                          >
+                            {{ level.label }}
+                          </button>
+                        }
+                      </div>
+                    </div>
+                  </div>
+                }
+
+                <label class="field-label" for="feedback-note">הערה <span>לא חובה</span></label>
+                <textarea
+                  id="feedback-note"
+                  class="text-field feedback-note"
+                  [value]="feedbackNote()"
+                  (input)="feedbackNote.set($any($event.target).value)"
+                  placeholder="איך הרגשת במהלך האימון?"
+                ></textarea>
+              </div>
+              <footer class="feedback-modal-footer">
+                <small>המשוב יוצג בפרטי האימון הזה.</small>
+                <div>
+                  <button
+                    class="button button-outline"
+                    type="button"
+                    (click)="closeWorkoutFeedback()"
+                  >
+                    ביטול</button
+                  ><button
+                    class="button button-dark"
+                    type="button"
+                    (click)="savePersonalWorkoutFeedback()"
+                  >
+                    שמירת משוב <span>←</span>
+                  </button>
+                </div>
+              </footer>
+            </section>
+          </div>
+        }
+      }
+
+      @if (attendanceSession(); as session) {
+        <div class="attendance-backdrop" role="presentation" (click)="closeAttendanceSheet()">
+          <section
+            class="panel attendance-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="attendance-modal-title"
+            (click)="$event.stopPropagation()"
+          >
+            <header class="attendance-modal-header">
+              <div>
+                <p class="eyebrow">
+                  {{ session.date }} · {{ session.time }} · {{ session.location }}
+                </p>
+                <h2 id="attendance-modal-title">נוכחות · {{ session.name }}</h2>
+                <small>{{ attendedCount(session) }} מתאמנים סומנו כנוכחים</small>
+              </div>
+              <button
+                class="member-detail-close"
+                type="button"
+                aria-label="סגירת נוכחות"
+                (click)="closeAttendanceSheet()"
+              >
+                ×
+              </button>
+            </header>
+            <div class="attendance-list">
+              @if (isDemoSession()) {
+                @for (member of activeMembers(); track member.id) {
+                  <div class="attendance-member">
+                    <span class="person-avatar">{{ member.initials }}</span>
+                    <div>
+                      <strong>{{ member.name }}</strong
+                      ><small
+                        >{{ member.attendance }} אימונים ·
+                        {{ remainingSessions(member.id) }} בחבילה</small
+                      >
+                    </div>
+                    @if (session.attendedMemberIds.includes(member.id)) {
+                      <span class="attendance-marked"
+                        ><svg lucideCheck size="13"></svg> נוכחות סומנה</span
+                      >
+                    } @else {
+                      <button
+                        class="button button-outline"
+                        type="button"
+                        (click)="markClassAttendance(session.id, member.id)"
+                      >
+                        סימון אימון
+                      </button>
+                    }
+                  </div>
+                } @empty {
+                  <div class="member-detail-empty">אין מתאמנים פעילים לסימון.</div>
+                }
+              } @else {
+                @for (attendee of session.attendees ?? []; track attendee.memberId) {
+                  <div class="attendance-member">
+                    <span class="person-avatar">{{ attendee.name.slice(0, 2) }}</span>
+                    <div>
+                      <strong>{{ attendee.name }}</strong>
+                    </div>
+                    @if (attendee.attended) {
+                      <span class="attendance-marked"
+                        ><svg lucideCheck size="13"></svg> נוכחות סומנה</span
+                      >
+                    } @else {
+                      <button
+                        class="button button-outline"
+                        type="button"
+                        (click)="markClassAttendance(session.id, attendee.memberId)"
+                      >
+                        סימון אימון
+                      </button>
+                    }
+                  </div>
+                } @empty {
+                  <div class="member-detail-empty">אין נרשמים לשיעור.</div>
+                }
+              }
+            </div>
+          </section>
+        </div>
+      }
+      @if (memberPendingRemoval(); as member) {
+        <div class="member-remove-backdrop" role="presentation" (click)="cancelMemberRemoval()">
+          <section
+            class="panel member-remove-modal"
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="member-remove-title"
+            (click)="$event.stopPropagation()"
+          >
+            <p class="eyebrow">אישור פעולה</p>
+            <h2 id="member-remove-title">
+              {{
+                member.status === 'pending' || member.status === 'approved'
+                  ? 'לדחות את בקשת ההצטרפות?'
+                  : member.status === 'deactivated'
+                    ? 'להפעיל מחדש את חשבון המתאמן/ת?'
+                    : 'להשבית את חשבון המתאמן/ת?'
+              }}
+            </h2>
+            <p>
+              {{
+                member.status === 'pending' || member.status === 'approved'
+                  ? 'הבקשה של ' + member.name + ' תוסר.'
+                  : member.status === 'deactivated'
+                    ? 'החשבון של ' + member.name + ' יקבל שוב גישה למערכת.'
+                    : isDemoSession()
+                      ? 'הכרטיס, ההיסטוריה והרישומים של ' + member.name + ' יוסרו מהדמו.'
+                      : 'הגישה של ' +
+                        member.name +
+                        ' תבוטל. תשלומים, נוכחות והיסטוריה יישמרו בארכיון.'
+              }}
+            </p>
+            <div>
+              <button class="button button-outline" type="button" (click)="cancelMemberRemoval()">
+                ביטול</button
+              ><button class="button button-danger" type="button" (click)="confirmMemberRemoval()">
+                {{
+                  member.status === 'pending' || member.status === 'approved'
+                    ? 'דחיית בקשה'
+                    : member.status === 'deactivated'
+                      ? 'הפעלה מחדש'
+                      : 'השבתת חשבון'
+                }}
+              </button>
+            </div>
+          </section>
+        </div>
+      }
+      <footer class="app-footer">
+        <span class="footer-brand">YOCA</span><span>שליטה היא הכוח האמיתי.</span
+        ><span>© YOCA 2026</span>
+      </footer>
+    } @else {
+      <section class="auth-layout">
+        <div class="auth-story">
+          <span class="auth-kicker">YOCA STUDIO</span>
+          <h1>
+            {{
+              authMode() === 'activate'
+                ? 'הפעלת החשבון'
+                : authMode() === 'login'
+                  ? 'חזור לתנועה'
+                  : 'הצטרף ל־YOCA'
+            }}
+          </h1>
+          <p>שיעורים, עדכונים וההתקדמות האישית שלך — במקום אחד.</p>
+          <div class="auth-story-mark">
+            <img class="auth-symbol" src="yoca-symbol.svg" alt="" />
+            <div><strong>YOCA</strong><small>YOGA · CALISTHENICS</small></div>
+          </div>
+        </div>
+        <section class="panel auth-panel">
+          @if (authMode() !== 'activate') {
+            <div class="auth-mode-tabs" role="tablist" aria-label="כניסה או בקשת גישה">
+              <button
+                type="button"
+                role="tab"
+                [attr.aria-selected]="authMode() === 'login'"
+                [class.active]="authMode() === 'login'"
+                (click)="setAuthMode('login')"
+              >
+                התחברות</button
+              ><button
+                type="button"
+                role="tab"
+                [attr.aria-selected]="authMode() === 'request'"
+                [class.active]="authMode() === 'request'"
+                (click)="setAuthMode('request')"
+              >
+                בקשת גישה
+              </button>
+            </div>
+          }
+          @if (authMode() === 'login') {
+            <p class="eyebrow">שלום לך</p>
+            <h2>התחברות לחשבון</h2>
+            <label class="field-label" for="login-email">שם משתמש או אימייל</label
+            ><input
+              id="login-email"
+              class="text-field"
+              type="text"
+              autocomplete="username"
+              [value]="loginEmail()"
+              (input)="loginEmail.set($any($event.target).value)"
+              placeholder="שם משתמש או name@example.com"
+            /><label class="field-label" for="login-password">סיסמה</label
+            ><input
+              id="login-password"
+              class="text-field"
+              type="password"
+              autocomplete="current-password"
+              [value]="loginPassword()"
+              (input)="loginPassword.set($any($event.target).value)"
+            />
+            @if (loginMessage()) {
+              <p class="auth-message" role="status">{{ loginMessage() }}</p>
+            }
+            <button class="button button-dark button-wide" type="button" (click)="submitLogin()">
+              התחברות <span>←</span>
+            </button>
+            <div class="auth-divider"><span>או דמו</span></div>
+            <div class="demo-login-actions">
+              <button class="button button-outline" type="button" (click)="enterDemo()">
+                מתאמן</button
+              ><button class="button button-outline" type="button" (click)="enterCoachDemo()">
+                מאמן
+              </button>
+            </div>
+            <small class="privacy-note">התחברות לחשבון שאושר על ידי המאמן.</small>
+          } @else if (authMode() === 'request') {
+            @if (joinState() === 'sent') {
+              <div class="join-success auth-success">
+                <span>✓</span>
+                <p class="eyebrow">הבקשה התקבלה</p>
+                <h2>הפרטים אצלנו.</h2>
+                <p>הגישה תיפתח לאחר אישור מנהל הסטודיו.</p>
+                <button class="button button-outline" type="button" (click)="setAuthMode('login')">
+                  חזרה להתחברות
+                </button>
+              </div>
+            } @else {
+              <p class="eyebrow">הצטרף לסטודיו</p>
+              <h2>בקשת גישה</h2>
+              <label class="field-label" for="auth-join-name">שם מלא</label
+              ><input
+                id="auth-join-name"
+                class="text-field"
+                autocomplete="name"
+                [value]="joinName()"
+                (input)="joinName.set($any($event.target).value)"
+                placeholder="שם מלא"
+              /><label class="field-label" for="auth-join-email">כתובת אימייל</label
+              ><input
+                id="auth-join-email"
+                class="text-field"
+                type="email"
+                [value]="joinEmail()"
+                (input)="joinEmail.set($any($event.target).value)"
+                placeholder="name@example.com"
+              />
+              @if (joinState() === 'error') {
+                <p class="form-error">בדיקת הפרטים או חיבור השרת נכשלה. אפשר לנסות שוב.</p>
+              }
+              <button
+                class="button button-dark button-wide"
+                [disabled]="joinState() === 'sending'"
+                type="button"
+                (click)="requestAccess()"
+              >
+                {{ joinState() === 'sending' ? 'שולחים בקשה...' : 'שליחת בקשת גישה' }}
+                <span>←</span></button
+              ><small class="privacy-note">הבקשה ממתינה לאישור מנהל הסטודיו.</small>
+            }
+          } @else {
+            <p class="eyebrow">הבקשה אושרה</p>
+            <h2>פתיחת החשבון</h2>
+            <p class="form-intro">בחר שם משתמש וסיסמה לכניסה לאזור האישי.</p>
+            <label class="field-label" for="activation-email">כתובת אימייל מההזמנה</label
+            ><input
+              id="activation-email"
+              class="text-field"
+              type="email"
+              autocomplete="email"
+              [value]="activationEmail()"
+              (input)="activationEmail.set($any($event.target).value)"
+              placeholder="name@example.com"
+            /><label class="field-label" for="activation-username">שם משתמש</label
+            ><input
+              id="activation-username"
+              class="text-field"
+              autocomplete="username"
+              [value]="activationUsername()"
+              (input)="activationUsername.set($any($event.target).value)"
+              placeholder="3–32 תווים באנגלית"
+            /><label class="field-label" for="activation-password">סיסמה</label
+            ><input
+              id="activation-password"
+              class="text-field"
+              type="password"
+              autocomplete="new-password"
+              [value]="activationPassword()"
+              (input)="activationPassword.set($any($event.target).value)"
+            /><label class="field-label" for="activation-password-confirm">אימות סיסמה</label
+            ><input
+              id="activation-password-confirm"
+              class="text-field"
+              type="password"
+              autocomplete="new-password"
+              [value]="activationPasswordConfirm()"
+              (input)="activationPasswordConfirm.set($any($event.target).value)"
+            />
+            @if (activationMessage()) {
+              <p class="auth-message" role="alert">{{ activationMessage() }}</p>
+            }
+            <button
+              class="button button-dark button-wide"
+              type="button"
+              (click)="submitActivation()"
+            >
+              יצירת חשבון והתחברות <span>←</span></button
+            ><small class="privacy-note">הקישור חד־פעמי ותוקפו 48 שעות.</small>
+          }
+        </section>
+      </section>
+    }
+  </main>
+
+  @if (toast()) {
+    <div class="toast-message" role="status"><span>✓</span>{{ toast() }}</div>
+  }
+</div>
