@@ -1,11 +1,13 @@
-import { config } from 'dotenv';
 import { NestFactory } from '@nestjs/core';
 import { resolve } from 'node:path';
 import { AppModule } from './app.module';
 
-config({ path: resolve(__dirname, '..', '.env') });
-
 async function bootstrap() {
+  if (!process.env.VERCEL) {
+    const { config } = await import('dotenv');
+    config({ path: resolve(__dirname, '..', '.env') });
+  }
+
   const app = await NestFactory.create(AppModule);
   app.setGlobalPrefix('');
   app.enableCors({

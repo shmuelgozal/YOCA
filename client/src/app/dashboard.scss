@@ -585,6 +585,8 @@ h1 { margin-bottom: 5px; font-size: 30px; font-weight: 700; letter-spacing: 0; l
 @media (max-width: 760px) {
   .topbar { display:grid;grid-template-columns:1fr auto 1fr;height:61px;padding:0 16px; }
   .brand { order:3;justify-self:end; }
+  .install-button { order:2; }
+  .topbar:has(.install-button) .demo-pill { display:none; }
   .brand-symbol { height:50px;flex-basis:40px; }
   .brand-word { font-size: 19px; }
   .brand-tagline { font-size: 9px; }

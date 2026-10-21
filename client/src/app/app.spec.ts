@@ -58,6 +58,33 @@ describe('App', () => {
     expect(app).toBeTruthy();
   });
 
+  it('offers the browser install prompt and hides the button after installation', async () => {
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+    const prompt = jasmine.createSpy('prompt').and.resolveTo();
+    const installEvent = new Event('beforeinstallprompt', { cancelable: true });
+    Object.defineProperties(installEvent, {
+      prompt: { value: prompt },
+      userChoice: { value: Promise.resolve({ outcome: 'accepted', platform: 'web' }) },
+    });
+
+    window.dispatchEvent(installEvent);
+    fixture.detectChanges();
+    expect(installEvent.defaultPrevented).toBeTrue();
+    const installButton = fixture.nativeElement.querySelector(
+      '.install-button',
+    ) as HTMLButtonElement;
+    expect(installButton).toBeTruthy();
+
+    installButton.click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(prompt).toHaveBeenCalled();
+    expect(fixture.componentInstance.appInstalled()).toBeTrue();
+    expect(fixture.nativeElement.querySelector('.install-button')).toBeNull();
+  });
+
   it('renders the trainee home and member navigation', () => {
     const fixture = TestBed.createComponent(App);
     fixture.componentInstance.enterDemo();

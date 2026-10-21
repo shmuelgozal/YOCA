@@ -42,6 +42,11 @@ type PainIntensity = 'mild' | 'moderate' | 'strong';
 type DiscountKind = 'percent' | 'amount';
 type PaymentMethod = 'cash' | 'bit' | 'paybox';
 
+interface BeforeInstallPromptEvent extends Event {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; platform: string }>;
+}
+
 const profileCopyByAddress: Record<ProfileCopyKey, Record<MemberAddress, string>> = {
   memberArea: { feminine: 'אזור מתאמנת', masculine: 'אזור מתאמן', neutral: 'אזור אישי' },
   memberProfileLabel: { feminine: 'פרטי מתאמנת', masculine: 'פרטי מתאמן', neutral: 'פרטים אישיים' },
@@ -359,7 +364,30 @@ export class App {
     this.restoreSession();
   }
 
+  @HostListener('window:beforeinstallprompt', ['$event'])
+  onBeforeInstallPrompt(event: Event): void {
+    event.preventDefault();
+    this.installPrompt.set(event as BeforeInstallPromptEvent);
+  }
+
+  @HostListener('window:appinstalled')
+  onAppInstalled(): void {
+    this.appInstalled.set(true);
+    this.installPrompt.set(null);
+  }
+
   private readonly sanitizer = inject(DomSanitizer);
+  private readonly isIosDevice =
+    /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  readonly installPrompt = signal<BeforeInstallPromptEvent | null>(null);
+  readonly appInstalled = signal(
+    window.matchMedia('(display-mode: standalone)').matches ||
+      ('standalone' in navigator && navigator.standalone === true),
+  );
+  readonly showInstallButton = computed(
+    () => !this.appInstalled() && (this.installPrompt() !== null || this.isIosDevice),
+  );
   readonly navItems = [
     { id: 'overview', label: 'סקירה' },
     { id: 'schedule', label: 'שיעורים' },
@@ -475,6 +503,25 @@ export class App {
   readonly paymentPackageId = signal<number | string>(2);
   readonly paymentPackageCount = signal('1');
   readonly paymentMethod = signal<PaymentMethod>('bit');
+
+  async installApp(): Promise<void> {
+    const prompt = this.installPrompt();
+    if (!prompt) {
+      this.toast.set('ב-iPhone: לחצו על שיתוף ב-Safari ואז על "הוספה למסך הבית".');
+      return;
+    }
+
+    try {
+      await prompt.prompt();
+      const { outcome } = await prompt.userChoice;
+      this.installPrompt.set(null);
+      if (outcome === 'accepted') {
+        this.appInstalled.set(true);
+      }
+    } catch {
+      this.toast.set('לא ניתן לפתוח כרגע את חלון ההתקנה. נסו שוב מתפריט הדפדפן.');
+    }
+  }
   readonly paymentSaving = signal(false);
   readonly memberPayments = signal<MemberPayment[]>([
     {

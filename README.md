@@ -28,6 +28,10 @@ npm run dev:client
 
 Open http://localhost:4200. The Angular dev server proxies `/api` to the NestJS server on port 3000.
 
+## Install on a phone
+
+Deploy the client over HTTPS to make it installable as a PWA. On supported Android browsers, use **התקנת האפליקציה** in the page or the browser's install option. On iPhone, open the link in Safari, tap **Share**, then **Add to Home Screen**. Browsers require the user to confirm installation; opening a link cannot install an app automatically.
+
 ## Online demo deployment
 
 The demo is configured for a single Vercel deployment with two services: the Angular frontend and the NestJS API. Requests under `/api` are routed to the backend; all other requests go to the frontend. Vercel Services is currently in Beta.

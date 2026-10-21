@@ -7,6 +7,11 @@
       >
       <img class="brand-symbol" src="yoca-symbol.svg" alt="" />
     </a>
+    @if (showInstallButton()) {
+      <button class="button button-outline install-button" type="button" (click)="installApp()">
+        התקנת האפליקציה
+      </button>
+    }
     @if (isAuthenticated()) {
       <nav class="main-nav" aria-label="ניווט ראשי" role="tablist">
         @for (item of visibleNavItems(); track item.id) {
