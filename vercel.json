@@ -9,6 +9,7 @@
     },
     "backend": {
       "root": "server/",
+      "entrypoint": "src/main.ts",
       "installCommand": "npm ci",
       "buildCommand": "npm run build"
     }
