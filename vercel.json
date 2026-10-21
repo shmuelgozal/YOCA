@@ -3,14 +3,14 @@
   "services": {
     "frontend": {
       "root": "client/",
-      "installCommand": "npm ci",
+      "installCommand": "npm ci --include=dev",
       "buildCommand": "npm run build",
       "outputDirectory": "dist/yoca-client/browser"
     },
     "backend": {
       "root": "server/",
       "entrypoint": "src/main.ts",
-      "installCommand": "npm ci",
+      "installCommand": "npm ci --include=dev",
       "buildCommand": "npm run build"
     }
   },
